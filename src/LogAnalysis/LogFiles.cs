@@ -43,5 +43,30 @@ namespace LogAnalysis
             using FileStream outputFileStream = File.Create(outputFilePath);
             decompressor.CopyTo(outputFileStream);
         }
+
+        public static LogRecord[] GetAllLogRecords()
+        {
+            List<LogRecord> records = new();
+            foreach (string filePath in Directory.GetFiles(LogFileFolder, "*.txt"))
+            {
+                Console.WriteLine(filePath);
+                foreach (string line in File.ReadAllLines(filePath))
+                {
+                    records.Add(LogRecord.FromLogLine(line));
+                }
+            }
+            return records.ToArray();
+        }
+
+        public static LogRecord[] GetLatestLogRecords()
+        {
+            List<LogRecord> records = new();
+            string filePath = Directory.GetFiles(LogFileFolder, "*.txt").OrderBy(x => x).Last();
+            foreach (string line in File.ReadAllLines(filePath))
+            {
+                records.Add(LogRecord.FromLogLine(line));
+            }
+            return records.ToArray();
+        }
     }
 }
