@@ -9,8 +9,10 @@ namespace LogAnalysis
 {
     internal static class FTP
     {
-        public static void DownloadLogs(FtpSecrets secrets)
+        public static void DownloadLogs()
         {
+            FtpSecrets secrets = new();
+
             using FtpClient client = new(secrets.Hostname, secrets.Username, secrets.Password);
             client.EncryptionMode = FtpEncryptionMode.Explicit;
             client.ValidateAnyCertificate = true;
@@ -25,11 +27,11 @@ namespace LogAnalysis
 
             foreach (FtpListItem item in items)
             {
-                string outPath = Path.Combine(LogFiles.LogFileFolder, item.Name);
+                string gzipFilePath = Path.Combine(LogFiles.LogFileFolder, item.Name);
 
-                if (File.Exists(outPath))
+                if (File.Exists(gzipFilePath))
                 {
-                    long localFileSize = new FileInfo(outPath).Length;
+                    long localFileSize = new FileInfo(gzipFilePath).Length;
                     if (item.Size == localFileSize)
                     {
                         Console.WriteLine($"Skipping: {item.Name} {item.Size}");
@@ -38,8 +40,12 @@ namespace LogAnalysis
                 }
 
                 Console.WriteLine($"Downloading: {item.Name}");
-                using FileStream fs = new(outPath, FileMode.CreateNew);
+                using FileStream fs = new(gzipFilePath, FileMode.CreateNew);
                 client.Download(fs, item.FullName);
+                fs.Close();
+
+                Console.WriteLine($"Decompressing: {item.Name}");
+                LogFiles.Decompress(gzipFilePath);
             }
         }
     }
