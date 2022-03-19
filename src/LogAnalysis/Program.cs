@@ -6,6 +6,7 @@ public static class Program
 {
     public static void Main()
     {
+        FTP.DownloadLogs();
         CreateReport(ReadErrorRecords(3), "error.html");
         CreateReport(ReadSuccessRecords(3), "success.html");
     }
@@ -67,7 +68,8 @@ public static class Program
             rows.Add(row);
         }
 
-        Page pg = new("Error Log");
+        string title = filename.Split(".")[0];
+        Page pg = new(title);
         pg.AddTable(rows.ToArray(), columns);
         pg.Save(errorFilePath);
         Console.WriteLine(errorFilePath);
