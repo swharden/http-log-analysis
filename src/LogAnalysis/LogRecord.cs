@@ -42,7 +42,7 @@ namespace LogAnalysis
                 RequestType = partsOne.Length > 1 ? partsOne[2] : string.Empty,
                 ResponseCode = int.Parse(partsTwo[0]),
                 ResponseSize = int.Parse(partsTwo[1]),
-                Referrer = parts[3],
+                Referrer = parts[3] != "-" ? parts[3] : string.Empty,
                 Agent = parts[5],
                 Tail = parts[6],
             };

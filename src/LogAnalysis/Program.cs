@@ -6,8 +6,17 @@ public static class Program
 {
     public static void Main()
     {
-        //FTP.DownloadLogs();
+        CreateReport(ReadErrorRecords(3), "error.html");
+        CreateReport(ReadSuccessRecords(3), "success.html");
+    }
 
+    private static LogRecord[] ReadSuccessRecords(int maxFileCount)
+    {
+        return LogFiles.LoadRecords(maxFileCount).Where(x => x.ResponseCode == 200).ToArray();
+    }
+
+    private static LogRecord[] ReadErrorRecords(int maxFileCount)
+    {
         int[] ignoredCodes =
         {
             200, // OK
@@ -24,30 +33,43 @@ public static class Program
             //404
         };
 
-        LogRecord[] errorRecords = LogFiles.GetLatestLogRecords()
-            .Where(x => !ignoredCodes.Contains(x.ResponseCode))
-            .ToArray();
-
-        MakeReport(errorRecords);
+        return LogFiles.LoadRecords(maxFileCount).Where(x => !ignoredCodes.Contains(x.ResponseCode)).ToArray();
     }
 
-    private static void MakeReport(LogRecord[] records, string filename = "error.html")
+    private static void CreateReport(LogRecord[] records, string filename = "report.html")
     {
-        StringBuilder sb = new();
+        string errorFilePath = Path.GetFullPath(filename);
 
-        sb.AppendLine("<table>");
-        foreach (LogRecord r in records)
+        List<string[]> rows = new();
+        IGrouping<string, LogRecord>[] groups = records
+            .GroupBy(x => x.Path, x => x)
+            .OrderBy(x => x.Count())
+            .Reverse()
+            .ToArray();
+
+        string[] columns = { "count", "URL", "Referrers" };
+        foreach (var group in groups)
         {
-            sb.AppendLine("<tr>");
-            sb.AppendLine($"<td>{r.DateTime}</td>");
-            sb.AppendLine($"<td>{r.ResponseCode}</td>");
-            sb.AppendLine($"<td>{r.Path}</td>");
-            sb.AppendLine($"<td>{r.Referrer}</td>");
-            sb.AppendLine("</tr>");
+            string url = group.First().Path;
+            string fullUrl = "https://swharden.com" + url;
+            string urlHtml = $"<a href='{fullUrl}'>{url}</a>";
+
+            string refListHtml = string.Join(" ",
+                group.Select(x => x.Referrer)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .OrderBy(x => x)
+                .Select(x => $"<li><a href='{x}'>{x}</a></li>"));
+
+            refListHtml = $"<div style='font-size: .8em;'>{refListHtml}</div>";
+
+            string[] row = { group.Count().ToString(), urlHtml, refListHtml };
+            rows.Add(row);
         }
-        sb.AppendLine("</table>");
-        
-        File.WriteAllText(filename, sb.ToString());
-        Console.WriteLine(Path.GetFullPath(filename));
+
+        Page pg = new("Error Log");
+        pg.AddTable(rows.ToArray(), columns);
+        pg.Save(errorFilePath);
+        Console.WriteLine(errorFilePath);
     }
 }
