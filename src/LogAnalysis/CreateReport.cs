@@ -8,19 +8,19 @@ namespace LogAnalysis
 {
     public static class CreateReport
     {
-        public static void Error()
+        public static void Error(int days)
         {
-            CreateRecordReport(ReadErrorRecords(3), "error.html");
+            CreateRecordReport(ReadErrorRecords(days), "error.html");
         }
 
-        public static void Success()
+        public static void Success(int days)
         {
-            CreateRecordReport(ReadSuccessRecords(3), "success.html");
+            CreateRecordReport(ReadSuccessRecords(days), "success.html");
         }
 
-        public static void Referrer()
+        public static void Referrer(int days)
         {
-            LogRecord[] records = ReadSuccessRecords(3)
+            LogRecord[] records = ReadSuccessRecords(days)
                 .Where(x => !string.IsNullOrWhiteSpace(x.Referrer))
                 .Where(x => !x.Referrer.Contains("swharden.com/"))
                 .Where(x => !x.Referrer.Contains("/swharden.com"))
